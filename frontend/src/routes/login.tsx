@@ -44,7 +44,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - FastAPI SOUNDAR Template",
+        title: "Log In - FastAPI SOUNDARR  Template",
       },
     ],
   }),

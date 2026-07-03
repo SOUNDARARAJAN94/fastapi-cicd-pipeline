@@ -22,13 +22,22 @@ pipeline {
 
         stage('Build Backend Docker Image') {
             steps {
-                sh 'docker build -t fastapi-backend:latest -f backend/Dockerfile .'
+                sh '''
+                docker build \
+                  -t fastapi-backend:latest \
+                  -f backend/Dockerfile .
+                '''
             }
         }
 
         stage('Build Frontend Docker Image') {
             steps {
-                sh 'docker build -t fastapi-frontend:latest -f frontend/Dockerfile --build-arg VITE_API_URL=http://localhost .'
+                sh '''
+                docker build \
+                  -t fastapi-frontend:latest \
+                  -f frontend/Dockerfile \
+                  --build-arg VITE_API_URL=http://54.206.229.237:8000 .
+                '''
             }
         }
 
@@ -59,6 +68,55 @@ pipeline {
                 docker push $FRONTEND_IMAGE
                 '''
             }
+        }
+
+        stage('Deploy Backend') {
+            steps {
+                sh '''
+                docker stop backend || true
+                docker rm backend || true
+
+                docker pull $BACKEND_IMAGE
+
+                docker run -d \
+                  --name backend \
+                  --env-file .env \
+                  -p 8000:8000 \
+                  $BACKEND_IMAGE
+                '''
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                sh '''
+                docker stop frontend || true
+                docker rm frontend || true
+
+                docker pull $FRONTEND_IMAGE
+
+                docker run -d \
+                  --name frontend \
+                  -p 80:80 \
+                  $FRONTEND_IMAGE
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "=================================="
+            echo "Build Successful"
+            echo "Images pushed to ECR"
+            echo "Application Deployed Successfully"
+            echo "Frontend : http://54.206.229.237"
+            echo "Backend  : http://54.206.229.237:8000/docs"
+            echo "=================================="
+        }
+
+        failure {
+            echo "Pipeline Failed"
         }
     }
 }
